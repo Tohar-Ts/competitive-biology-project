@@ -165,18 +165,18 @@ if __name__ == "__main__":
 
     # Q1
     print("\n------------Question 1------------")
-    cds, __ = group_genes(gb_df)       # group to CDS and others
+    cds, __ = group_genes(gb_df)             # group to CDS and others
     cds_id = np.asarray(cds['id'])           # converting id col to arr
     up_id = np.asarray(up_df['Gene ID'])
-    compare_gb_to_up(cds_id, up_id)            # printing the comparing results
+    compare_gb_to_up(cds_id, up_id)          # printing the comparing results
  
     # Q2 
     print("\n------------Question 2------------")
-    trans_df = create_trans_table(up_df)
-    trans_len_arr = np.asarray(trans_df['length'])      
-    plot_trans_len_stat(trans_len_arr)
+    trans_df = create_trans_table(up_df)      # creating a table of all the trans parts
+    trans_len_arr = np.asarray(trans_df['length'])  
+    plot_trans_len_stat(trans_len_arr)        # printing trans lengths stats
     trans_seq_arr = np.asarray(trans_df['sequence']) 
-    plot_trans_amino_stat(trans_seq_arr)
+    plot_trans_amino_stat(trans_seq_arr)      # printing trans hydro amino stats
     
     # Q3
     # print("\n------------Question 3------------")

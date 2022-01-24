@@ -101,7 +101,7 @@ def GC_percentage(sequence):
 
 def source_GC(rec):
     genome = rec.seq.upper()
-    GC_percent = GC_percentage(genome)
+    GC_percent = GC_percentage(genome)  * 100
     print("Geonome GC percent: {:.2f}%".format(GC_percent))
     return genome
 
@@ -118,8 +118,12 @@ def add_GC_percent_col(df, genome):
     return df
 
 # ------------A.3.c------------
+def mean(lst):
+    return lst.mean() *100
+    
+    
 def avg_GC_percent_col(df):
-    print("Proteins average GC percent: {:.2f}%".format(df["GC percent"].mean()))
+    print("Proteins average GC percent: {:.2f}%".format(mean(df["GC percent"])))
 
 # ------------A.3.d------------
 def plot_GC_stat(GC_percent_arr):
@@ -150,17 +154,17 @@ if __name__ == "__main__":
     # Q2 
     print("\n------------Question 2------------")
     gb_df = add_len_col(gb_df)                    # calculate the len
-    cds, other_gene = group_genes(gb_df)       # group to CDS and others
-    cds_arr = np.asarray(cds['len'])        # get the arr of len for each group
+    cds, other_gene = group_genes(gb_df)          # group to CDS and others
+    cds_arr = np.asarray(cds['len'])              # get the arr of len for each group
     other_gene_arr = np.asarray(other_gene['len'])
-    plot_len_stat(cds_arr, other_gene_arr)  # print the stat and plot the histogram
+    plot_len_stat(cds_arr, other_gene_arr)        # print the stat and plot the histogram
 
     # Q3
     print("\n------------Question 3------------")
-    genome = source_GC(rec)                 # print GC percent of the genome 
+    genome = source_GC(rec)                       # print GC percent of the genome 
     gb_df = add_GC_percent_col(gb_df, genome)     # create GC percent column
-    avg_GC_percent_col(gb_df)                  # print average GC percent of proteins
+    avg_GC_percent_col(gb_df)                     # print average GC percent of proteins
     GC_percent_arr = np.asarray(gb_df['GC percent'])
-    plot_GC_stat(GC_percent_arr)            # plot GC histogram
+    plot_GC_stat(GC_percent_arr)                  # plot GC histogram
     extreme_GC_percents_genes(gb_df)
-    gb_df.to_csv('data/part_a.csv')                 # save final results to csv file
+    gb_df.to_csv('data/part_a.csv')               # save final results to csv file
