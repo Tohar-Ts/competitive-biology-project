@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-FILE_PATH = "BS168.gb"
+FILE_PATH = "data/BS168.gb"
 
 def open_file():
     """read file
@@ -174,4 +174,4 @@ if __name__ == "__main__":
     GC_percent_arr = np.asarray(df['GC percent'])
     plot_GC_stat(GC_percent_arr)            # plot GC histogram
     extreme_GC_percents_genes(df)
-    df.to_csv('part_a.csv')                 # save final results to csv file
+    df.to_csv('data/part_a.csv')                 # save final results to csv file
