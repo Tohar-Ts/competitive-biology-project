@@ -3,29 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-FILE_PATH = "data/BS168.gb"
+UNIPORT_PATH = "data/BS168.gb"
 
-def open_file():
-    """read file
-    Args:
-        file_path ([type]): [description]
-    Returns:
-        [type]: [description]
-    """
-    with open(FILE_PATH, "r") as file:
+
+def open_and_create_gb_dataframe():
+    with open(UNIPORT_PATH, "r") as file:
         gen = SeqIO.parse(file, "genbank")
-        record_gb = next(gen)  # content of 1st record
-    return record_gb
-
-
-def create_dataframe(rec):
-    """[summary]
-    Args:
-        record ([type]): [description]
-    """
+        rec = next(gen)  # content of 1st record
+        
     id, start, end, type, strand = [], [], [], [], []
     # only for cds
-    table, translation, codon_start = [], [], [] 
+    table, translation, codon_start = [], [], []
     
     feats = rec.features[1:]
     for feat in feats:
@@ -50,7 +38,7 @@ def create_dataframe(rec):
     # creating the data frame
     df = pd.DataFrame(zip(id, start, end, strand, type, table, translation, codon_start), 
                       columns=['id', 'start', 'end', 'strand', 'type', 'table', 'translation', 'codon_start'])
-    return df    
+    return rec, df    
 
 # ------------A.1--------------
 def create_type_dict(df):
@@ -150,18 +138,17 @@ def extreme_GC_percents_genes(df, n = 5):
 
 
 if __name__ == "__main__":
-    rec = open_file()
-    df = create_dataframe(rec)
+    rec, gb_df = open_and_create_gb_dataframe()
     
     # Q1
     print("\n------------Question 1------------")
-    t_dict = create_type_dict(df)
+    t_dict = create_type_dict(gb_df)
     print("Result:", t_dict)
     
     # Q2 
     print("\n------------Question 2------------")
-    df = add_len_col(df)                    # calculate the len
-    cds, other_gene = group_genes(df)       # group to CDS and others
+    gb_df = add_len_col(gb_df)                    # calculate the len
+    cds, other_gene = group_genes(gb_df)       # group to CDS and others
     cds_arr = np.asarray(cds['len'])        # get the arr of len for each group
     other_gene_arr = np.asarray(other_gene['len'])
     plot_len_stat(cds_arr, other_gene_arr)  # print the stat and plot the histogram
@@ -169,9 +156,9 @@ if __name__ == "__main__":
     # Q3
     print("\n------------Question 3------------")
     genome = source_GC(rec)                 # print GC percent of the genome 
-    df = add_GC_percent_col(df, genome)     # create GC percent column
-    avg_GC_percent_col(df)                  # print average GC percent of proteins
-    GC_percent_arr = np.asarray(df['GC percent'])
+    gb_df = add_GC_percent_col(gb_df, genome)     # create GC percent column
+    avg_GC_percent_col(gb_df)                  # print average GC percent of proteins
+    GC_percent_arr = np.asarray(gb_df['GC percent'])
     plot_GC_stat(GC_percent_arr)            # plot GC histogram
-    extreme_GC_percents_genes(df)
-    df.to_csv('data/part_a.csv')                 # save final results to csv file
+    extreme_GC_percents_genes(gb_df)
+    gb_df.to_csv('data/part_a.csv')                 # save final results to csv file
