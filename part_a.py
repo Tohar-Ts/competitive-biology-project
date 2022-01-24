@@ -1,10 +1,5 @@
-import os
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio import SeqIO
 import numpy as np
-from statistics import mean
 import matplotlib.pyplot as plt
 import pandas as pd
 
