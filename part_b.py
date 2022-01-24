@@ -1,13 +1,10 @@
-from cmath import nan
-from tkinter.messagebox import NO
-from Bio import SeqIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from part_a import *
-import io   
 
 UNIPORT_PATH = "data/BS168.xlsx"
+Hydrophobic_amino = ['ALA', 'PHE', 'LEU', 'IIE', 'VAL', 'MET', 'PRO', 'TRP']
 
 def open_xlsx_file():
     return pd.read_excel(UNIPORT_PATH, sheet_name='Sheet0')
@@ -62,34 +59,35 @@ def compare_gb_to_up(cds_id, up_df):
     compare_gb_to_up = find_missing(clean_cds_id, clean_up_df) 
     compare_up_to_gb = find_missing(clean_up_df, clean_cds_id)
    
-    gb_total = len(clean_cds_id)
+    gb_total = len(cds_id)
     gb_missing_len = len(compare_gb_to_up)
     gb_not_missing_len = gb_total - gb_missing_len
     
-    up_total = len(clean_up_df)
-    up_missing_len = len(compare_up_to_gb)
-    up_not_missing_len = up_total - up_missing_len
+    up_total = len(up_df)
+    up_missing_len = len(compare_up_to_gb) 
 
-    up_nan = [id for id in up_df if id == 'nan']
-    up_nan_len = up_total - up_missing_len
-    
+    up_nan = [id for id in up_df if str(id) == 'nan']
+    up_nan_len = len(up_nan)
+
+    up_not_missing_len = up_total - up_missing_len - up_nan_len
+
     print("In Genebank but not in Uniport: \n", compare_gb_to_up)
-    print("Missing: ", gb_missing_len, " from total:", gb_total)
+    print("Missing:", gb_missing_len, ", from total:", gb_total)
     print("\nIn Uniport but not in Genebank (after removing nan): \n", compare_up_to_gb)
-    print("Missing: ", up_missing_len, " from total:", up_total)
+    print("Missing:", up_missing_len, ", Nan values: ", up_nan_len ,", from total:", up_total)
     
     plt.figure(figsize=(10, 6))
 
     plt.subplot(1, 2, 1)
     plt.title("GeneBank Genes")
     plt.pie([gb_missing_len, gb_not_missing_len], 
-            labels = ['not in uniport', 'in uniport'], explode = [0.2, 0.1], 
+            labels = ['not in uniport', 'in uniport'], explode = [0.5, 0.2], 
             shadow = True, autopct='%1.3f%%')
 
     plt.subplot(1, 2, 2)
     plt.title("Uniport Genes")
-    plt.pie([up_missing_len, up_nan_len, up_not_missing_len], 
-            labels =  ['not in genebank', 'nan values', 'in genebank'], explode = [0.2, 0.1, 0.1],
+    plt.pie([up_missing_len, up_not_missing_len, up_nan_len], 
+            labels =  ['not in genebank', 'in genebank' ,'nan values'], explode = [0.5, 0.1, 0.1],
             shadow = True, autopct='%1.3f%%')
        
     plt.suptitle("Comparing GeneBank and Uniport Proteins")
@@ -140,23 +138,45 @@ def plot_trans_len_stat(trans_len_arr):
     plt.tight_layout()
     plt.show() 
     
+
+def plot_trans_amino_stat(trans_seq_arr):
+    print("Transmembrane Hydrophobic Amino stats:")
     
+    # counting how many Hydrophobic amino are in every sequence
+    trans_seq_count = []
+    for s in trans_seq_arr:
+        count = 0
+        for a in Hydrophobic_amino:
+            if a in s:
+                count+=1
+        trans_seq_count.append(count)
+
+    stat(trans_seq_count)
+    
+    plt.title("Transmembrane Hydrophobic Amino Count")
+    plt.hist(trans_seq_count)
+    plt.tight_layout()
+    plt.show() 
+    
+      
 if __name__ == "__main__":
     rec, gb_df = open_and_create_gb_dataframe()
     up_df = open_xlsx_file()
 
     # Q1
-    # print("\n------------Question 1------------")
-    # cds, __ = group_genes(gb_df)       # group to CDS and others
-    # cds_id = np.asarray(cds['id'])           # converting id col to arr
-    # up_df = np.asarray(up_df['Gene ID'])
-    # compare_gb_to_up(cds_id, up_df)            # printing the comparing results
+    print("\n------------Question 1------------")
+    cds, __ = group_genes(gb_df)       # group to CDS and others
+    cds_id = np.asarray(cds['id'])           # converting id col to arr
+    up_id = np.asarray(up_df['Gene ID'])
+    compare_gb_to_up(cds_id, up_id)            # printing the comparing results
  
     # Q2 
     print("\n------------Question 2------------")
     trans_df = create_trans_table(up_df)
-    trans_len_arr = np.asarray(trans_df['length'])        # get the arr of len for each group
+    trans_len_arr = np.asarray(trans_df['length'])      
     plot_trans_len_stat(trans_len_arr)
+    trans_seq_arr = np.asarray(trans_df['sequence']) 
+    plot_trans_amino_stat(trans_seq_arr)
     
     # Q3
     # print("\n------------Question 3------------")
