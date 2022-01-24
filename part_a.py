@@ -11,7 +11,7 @@ def open_and_create_gb_dataframe():
         gen = SeqIO.parse(file, "genbank")
         rec = next(gen)  # content of 1st record
         
-    id, start, end, type, strand = [], [], [], [], []
+    id, start, end, feat_type, strand = [], [], [], [], []
     # only for cds
     table, translation, codon_start = [], [], []
     
@@ -23,7 +23,7 @@ def open_and_create_gb_dataframe():
         id.append(feat.qualifiers["locus_tag"][0])
         start.append(feat.location.start.position)
         end.append(feat.location.end.position)
-        type.append(feat.type)
+        feat_type.append(feat.type)
         strand.append(feat.location.strand)
         
         if feat.type == 'CDS':
@@ -36,7 +36,7 @@ def open_and_create_gb_dataframe():
             codon_start.append(None)
     
     # creating the data frame
-    df = pd.DataFrame(zip(id, start, end, strand, type, table, translation, codon_start), 
+    df = pd.DataFrame(zip(id, start, end, strand, feat_type, table, translation, codon_start), 
                       columns=['id', 'start', 'end', 'strand', 'type', 'table', 'translation', 'codon_start'])
     return rec, df    
 
@@ -69,6 +69,7 @@ def stat(arr):
 
 # ------------A.2.d------------
 def plot_len_stat(cds_len, other_gene_len):
+    print("Genes lengths stats:")
     stat(cds_len)
     stat(other_gene_len)
 
@@ -131,6 +132,7 @@ def plot_GC_stat(GC_percent_arr):
 def extreme_GC_percents_genes(df, n = 5):
     top = df.nlargest(n, 'GC percent')
     bottom = df.nsmallest(n, 'GC percent')
+    print("Extreme GC percents genes:")
     print("Top ", n, " GC percents genes details: ")
     print(top)
     print("Bottom ", n, " GC percents genes details: ")
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     # Q1
     print("\n------------Question 1------------")
     t_dict = create_type_dict(gb_df)
-    print("Result:", t_dict)
+    print("Types dictionary:", t_dict)
     
     # Q2 
     print("\n------------Question 2------------")

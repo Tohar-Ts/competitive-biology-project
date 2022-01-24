@@ -1,9 +1,11 @@
 from cmath import nan
+from tkinter.messagebox import NO
 from Bio import SeqIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from part_a import *
+import io   
 
 UNIPORT_PATH = "data/BS168.xlsx"
 
@@ -74,7 +76,7 @@ def compare_gb_to_up(cds_id, up_df):
     print("In Genebank but not in Uniport: \n", compare_gb_to_up)
     print("Missing: ", gb_missing_len, " from total:", gb_total)
     print("\nIn Uniport but not in Genebank (after removing nan): \n", compare_up_to_gb)
-    print("Total: ", up_missing_len, " from total:", up_total)
+    print("Missing: ", up_missing_len, " from total:", up_total)
     
     plt.figure(figsize=(10, 6))
 
@@ -93,6 +95,50 @@ def compare_gb_to_up(cds_id, up_df):
     plt.suptitle("Comparing GeneBank and Uniport Proteins")
     plt.tight_layout()
     plt.show()
+
+# ------------B.2--------------
+def create_trans_table(up_df):
+    up_clean_df = up_df.dropna(subset=['Transmembrane'])
+    
+    start_list, end_list, len_list, sequence_list, id_list = [], [], [], [], []
+    
+    for __, row in up_clean_df.iterrows():
+        trans = row['Transmembrane']    
+        sequence = row['Sequence']
+        id = row['Gene ID']
+        
+        trans = trans.replace('TRANSMEM', '').replace(' ', '').replace('..', '-')
+        trans = trans.split(';')
+        trans_indexes = [t for t in trans if '\"' not in t]
+        
+        for i in trans_indexes:
+            index = i.split('-')
+
+            start = int(index[0])
+            end = int(index[1])
+            seq = sequence[start:end + 1]
+            length = len(seq)
+            
+            start_list.append(start)
+            end_list.append(end)
+            sequence_list.append(seq)
+            len_list.append(length)
+            id_list.append(id)
+    
+    # creating the data frame
+    df = pd.DataFrame(zip(id_list, start_list, end_list, sequence_list, len_list), 
+                      columns=['id', 'start', 'end', 'sequence', 'length'])
+    return df        
+        
+        
+def plot_trans_len_stat(trans_len_arr):
+    print("Transmembrane Lengths stats:")
+    stat(trans_len_arr)
+    
+    plt.title("Transmembrane Lengths")
+    plt.hist(trans_len_arr)
+    plt.tight_layout()
+    plt.show() 
     
     
 if __name__ == "__main__":
@@ -100,15 +146,18 @@ if __name__ == "__main__":
     up_df = open_xlsx_file()
 
     # Q1
-    print("\n------------Question 1------------")
-    cds, other_gene = group_genes(gb_df)       # group to CDS and others
-    cds_id = np.asarray(gb_df['id'])           # converting id col to arr
-    up_df = np.asarray(up_df['Gene ID'])
-    compare_gb_to_up(cds_id, up_df)            # printing the comparing results
+    # print("\n------------Question 1------------")
+    # cds, __ = group_genes(gb_df)       # group to CDS and others
+    # cds_id = np.asarray(cds['id'])           # converting id col to arr
+    # up_df = np.asarray(up_df['Gene ID'])
+    # compare_gb_to_up(cds_id, up_df)            # printing the comparing results
  
     # Q2 
     print("\n------------Question 2------------")
-
+    trans_df = create_trans_table(up_df)
+    trans_len_arr = np.asarray(trans_df['length'])        # get the arr of len for each group
+    plot_trans_len_stat(trans_len_arr)
+    
     # Q3
-    print("\n------------Question 3------------")
+    # print("\n------------Question 3------------")
   
