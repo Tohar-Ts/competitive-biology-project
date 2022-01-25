@@ -131,8 +131,8 @@ def create_trans_table(up_df):
         
 def plot_trans_len_stat(trans_len_arr):
     print("Transmembrane Lengths stats:")
-    stat(trans_len_arr)
-    plot_hist("Transmembrane Lengths", trans_len_arr, "length", [0, 45], [0, 8000])
+    len_max = stat(trans_len_arr)
+    plot_hist("Transmembrane Lengths", trans_len_arr, "length", len_max, 8000)
     plt.tight_layout()
     plt.show() 
     
@@ -150,19 +150,15 @@ def plot_trans_amino_stat(trans_seq_arr):
     stat(trans_seq_percent)
     
     plot_hist("Transmembrane Hydrophobic Amino Percent", trans_seq_percent, "percent"
-              ,[0, 100], [0, 4000])
+              ,100, 4000)
     plt.tight_layout()
     plt.show() 
     
 # ------------B.3--------------
-def group_cds_by_trans(cds, clean_cds_id, clean_trans_id, clean_up_id):
-    with_mask = [(id in clean_trans_id) for id in clean_cds_id]
-    without_mask = [(not (id in clean_trans_id) and (id in clean_up_id))
-                    for id in clean_cds_id] 
-    
-    cds_with_trans = cds[with_mask]
-    cds_without_trans = cds[without_mask] 
-    
+def group_cds_by_trans(cds, clean_cds_id, clean_trans_id):
+    mask = np.array([(id in clean_trans_id) for id in clean_cds_id])
+    cds_with_trans = cds[mask]
+    cds_without_trans = cds[~mask] 
     return cds_with_trans, cds_without_trans
     
 
@@ -177,21 +173,24 @@ def plot_cds_trans_gc_percent(cds, cds_with_trans, cds_without_trans):
     stat(with_GC_percent)
     print("Proteins without transmembrane gc percent stats:")
     stat(without_GC_percent)
-
+    
     x_title = "GC percent"
-    x_range = [0, 100]
-    y_range = [0, 1500]
-    plt.figure(figsize=(10, 6))
+    x_max = 100
+    y_max = 1500
+    plt.figure(figsize=(15, 6))
 
-    plt.subplot(1, 3, 1)
-    plot_hist("All Proteins", all_GC_percent, x_title, x_range, y_range)
+    plt.subplot(1, 4, 1)
+    plot_hist("All Proteins", all_GC_percent, x_title, x_max, y_max)
 
-    plt.subplot(1, 3, 2)
-    plot_hist("Proteins with transmembrane", with_GC_percent, x_title, x_range, y_range)
+    plt.subplot(1, 4, 2)
+    plot_hist("Proteins with transmembrane", with_GC_percent, x_title, x_max, y_max)
 
-    plt.subplot(1, 3, 3)
-    plot_hist("Proteins without transmembrane", without_GC_percent, x_title, x_range, y_range)
-       
+    plt.subplot(1, 4, 3)
+    plot_hist("Proteins without transmembrane", without_GC_percent, x_title, x_max, y_max)
+    
+    plt.subplot(1, 4, 4)
+    plot_hist("Proteins without transmembrane", without_GC_percent, x_title, x_max, y_max)
+         
     plt.suptitle("GC Percent Histograms")
     plt.tight_layout()
     plt.show()
@@ -214,13 +213,13 @@ if __name__ == "__main__":
     print("\n------------Question 2------------")
     trans_df = create_trans_table(up_df)      # creating a table of all the trans parts
     trans_len_arr = np.asarray(trans_df['length']) 
-    trans_seq_arr = np.asarray(trans_df['sequence']) 
     plot_trans_len_stat(trans_len_arr)        # printing trans lengths stats
+    trans_seq_arr = np.asarray(trans_df['sequence']) 
     plot_trans_amino_stat(trans_seq_arr)      # printing trans hydro amino stats
     
     # Q3
     print("\n------------Question 3------------")
     trans_id = np.asarray(trans_df['id'])
     clean_trans_id = clean_id(trans_id)
-    cds_with_trans, cds_without_trans = group_cds_by_trans(cds_df, clean_cds_id, clean_trans_id, clean_up_id)
+    cds_with_trans, cds_without_trans = group_cds_by_trans(cds_df, clean_cds_id, clean_trans_id)
     plot_cds_trans_gc_percent(cds_df, cds_with_trans, cds_without_trans)

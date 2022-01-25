@@ -66,7 +66,11 @@ def stat(arr):
     min = np.min(arr)
     max = np.max(arr)
     avg = np.average(arr)
-    print("average: {:.2f},".format(avg), "minimum: {:.2f},".format(min), "maximum: {:.2f}".format(max))
+    med = np.median(arr)
+    print("average: {:.2f},".format(avg),
+          "minimum: {:.2f},".format(min),
+          "maximum: {:.2f}".format(max),
+          "median: {:.2f}".format(med))
     return max
 
 # ------------A.2.d------------
