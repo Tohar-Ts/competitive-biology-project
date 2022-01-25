@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 UNIPORT_PATH = "data/BS168.gb"
-
+RESULT_PATH = "data/part_a.csv"
 
 def open_and_create_gb_dataframe():
+    # opening the file
     with open(UNIPORT_PATH, "r") as file:
         gen = SeqIO.parse(file, "genbank")
         rec = next(gen)  # content of 1st record
@@ -45,12 +46,12 @@ def create_type_dict(df):
     return df.type.value_counts().to_dict()
 
 # ------------A.2.a------------
-def singel_gene_length(row):
-    return np.abs(row['end'] - row['start']) + 1
+def singel_gene_length(start, end):
+    return np.abs(end - start) + 1
 
 
 def add_len_col(df):
-    new_col = df.apply(lambda row: singel_gene_length(row), axis=1)
+    new_col = df.apply(lambda row: singel_gene_length(row['start'], row['end']), axis=1)
     df['len'] = new_col
     return df
 
@@ -68,25 +69,34 @@ def stat(arr):
     print("average: {:.2f},".format(avg), "minimum: {:.2f},".format(min), "maximum: {:.2f}".format(max))
 
 # ------------A.2.d------------
+def plot_hist(title, from_arr, x_label, x_range, y_range):
+    plt.title(title)
+    plt.hist(from_arr)
+    plt.xlabel(x_label)
+    plt.ylabel("number count")
+    plt.xlim(x_range)
+    plt.ylim(y_range)
+    
+    
 def plot_len_stat(cds_len, other_gene_len):
     print("Genes lengths stats:")
     stat(cds_len)
     stat(other_gene_len)
 
     all_genes = np.concatenate((cds_len,other_gene_len))
+    x_label = "length"
+    x_range =  [0, 16500]
+    y_range = [0, 4500]
     plt.figure(figsize=(10, 6))
 
     plt.subplot(1, 3, 1)
-    plt.title("All Genes")
-    plt.hist(all_genes)
+    plot_hist("All Genes", all_genes, x_label, x_range, y_range)
 
     plt.subplot(1, 3, 2)
-    plt.title("CDS Genes")
-    plt.hist(cds_len)
+    plot_hist("CDS Genes", cds_len, x_label, x_range, y_range)
 
     plt.subplot(1, 3, 3)
-    plt.title("Others")
-    plt.hist(other_gene_len)
+    plot_hist("Others", other_gene_len, x_label, x_range, y_range)
        
     plt.suptitle("Lengths Histograms")
     plt.tight_layout()
@@ -96,12 +106,12 @@ def plot_len_stat(cds_len, other_gene_len):
 def GC_percentage(sequence):
     G_count = sequence.count('G')
     C_count = sequence.count('C')
-    return (G_count + C_count) / len(sequence)
+    return ((G_count + C_count) / len(sequence)) * 100
 
 
 def source_GC(rec):
     genome = rec.seq.upper()
-    GC_percent = GC_percentage(genome)  * 100
+    GC_percent = GC_percentage(genome)
     print("Geonome GC percent: {:.2f}%".format(GC_percent))
     return genome
 
@@ -119,7 +129,7 @@ def add_GC_percent_col(df, genome):
 
 # ------------A.3.c------------
 def mean(lst):
-    return lst.mean() *100
+    return lst.mean()
     
     
 def avg_GC_percent_col(df):
@@ -127,9 +137,7 @@ def avg_GC_percent_col(df):
 
 # ------------A.3.d------------
 def plot_GC_stat(GC_percent_arr):
-    plt.title("GC Percent Histogram")
-    plt.hist(GC_percent_arr)
-    plt.tight_layout()
+    plot_hist("GC Percent Histogram", GC_percent_arr, "GC percent", [0, 100], [0, 1700])
     plt.show()
 
 # ------------A.3.d------------
@@ -154,8 +162,8 @@ if __name__ == "__main__":
     # Q2 
     print("\n------------Question 2------------")
     gb_df = add_len_col(gb_df)                    # calculate the len
-    cds, other_gene = group_genes(gb_df)          # group to CDS and others
-    cds_arr = np.asarray(cds['len'])              # get the arr of len for each group
+    cds_df, other_gene = group_genes(gb_df)          # group to CDS and others
+    cds_arr = np.asarray(cds_df['len'])              # get the arr of len for each group
     other_gene_arr = np.asarray(other_gene['len'])
     plot_len_stat(cds_arr, other_gene_arr)        # print the stat and plot the histogram
 
@@ -167,4 +175,4 @@ if __name__ == "__main__":
     GC_percent_arr = np.asarray(gb_df['GC percent'])
     plot_GC_stat(GC_percent_arr)                  # plot GC histogram
     extreme_GC_percents_genes(gb_df)
-    gb_df.to_csv('data/part_a.csv')               # save final results to csv file
+    gb_df.to_csv(RESULT_PATH)               # save final results to csv file

@@ -5,19 +5,25 @@ from part_a import *
 
 UNIPORT_PATH = "data/BS168.xlsx"
 Hydrophobic_amino = ['ALA', 'PHE', 'LEU', 'IIE', 'VAL', 'MET', 'PRO', 'TRP']
-
+    
 def open_xlsx_file():
     return pd.read_excel(UNIPORT_PATH, sheet_name='Sheet0')
 
+def open_part_a_result_file():
+    return pd.read_csv(RESULT_PATH)
+
 # ------------B.1--------------
-def clean_id(id_arr):
+def clean_id(id_arr, remove_nan = True):
     to_delete = ["_", ";"]
     to_replace = ["/"]
     clean_arr = []
     
     for id in id_arr:
         if str(id) == 'nan':
-            continue
+            if remove_nan:
+                continue
+            else:
+                clean_arr.append('nan')
         
         for d in to_delete:
             id = str(id).replace(d, "")
@@ -52,29 +58,23 @@ def find_missing(first, second):
     return missing
 
 
-def compare_gb_to_up(cds_id, up_df):
-    clean_cds_id = clean_id(cds_id)
-    clean_up_df =  clean_id(up_df)
-
-    compare_gb_to_up = find_missing(clean_cds_id, clean_up_df) 
-    compare_up_to_gb = find_missing(clean_up_df, clean_cds_id)
+def compare_gb_to_up(cds_id, up_id, clean_cds_id, clean_up_id):
+    compare_gb_to_up = find_missing(clean_cds_id, clean_up_id) 
+    compare_up_to_gb = find_missing(clean_up_id, clean_cds_id)
    
-    gb_total = len(cds_id)
+    gb_total_len = len(cds_id)
     gb_missing_len = len(compare_gb_to_up)
-    gb_not_missing_len = gb_total - gb_missing_len
+    gb_not_missing_len = gb_total_len - gb_missing_len
     
-    up_total = len(up_df)
+    up_total_len = len(up_id)
     up_missing_len = len(compare_up_to_gb) 
-
-    up_nan = [id for id in up_df if str(id) == 'nan']
-    up_nan_len = len(up_nan)
-
-    up_not_missing_len = up_total - up_missing_len - up_nan_len
+    up_nan_len = sum([1 for id in up_id if str(id) == 'nan'])
+    up_not_missing_len = up_total_len - up_missing_len - up_nan_len
 
     print("In Genebank but not in Uniport: \n", compare_gb_to_up)
-    print("Missing:", gb_missing_len, ", from total:", gb_total)
+    print("Missing:", gb_missing_len, ", from total:", gb_total_len)
     print("\nIn Uniport but not in Genebank (after removing nan): \n", compare_up_to_gb)
-    print("Missing:", up_missing_len, ", Nan values: ", up_nan_len ,", from total:", up_total)
+    print("Missing:", up_missing_len, ", Nan values: ", up_nan_len ,", from total:", up_total_len)
     
     plt.figure(figsize=(10, 6))
 
@@ -115,7 +115,7 @@ def create_trans_table(up_df):
             start = int(index[0])
             end = int(index[1])
             seq = sequence[start:end + 1]
-            length = len(seq)
+            length = singel_gene_length(start, end)
             
             start_list.append(start)
             end_list.append(end)
@@ -132,9 +132,7 @@ def create_trans_table(up_df):
 def plot_trans_len_stat(trans_len_arr):
     print("Transmembrane Lengths stats:")
     stat(trans_len_arr)
-    
-    plt.title("Transmembrane Lengths")
-    plt.hist(trans_len_arr)
+    plot_hist("Transmembrane Lengths", trans_len_arr, "length", [0, 45], [0, 8000])
     plt.tight_layout()
     plt.show() 
     
@@ -143,41 +141,89 @@ def plot_trans_amino_stat(trans_seq_arr):
     print("Transmembrane Hydrophobic Amino stats:")
     
     # counting how many Hydrophobic amino are in every sequence
-    trans_seq_count = []
+    trans_seq_percent = []
     for s in trans_seq_arr:
         count = 0
         for a in Hydrophobic_amino:
             if a in s:
-                count+=1
-        trans_seq_count.append(count)
-
-    stat(trans_seq_count)
+                # each amino is of len 3
+                count+=3
+        hydro_percent = (count / len(s)) * 100
+        trans_seq_percent.append(hydro_percent)
     
-    plt.title("Transmembrane Hydrophobic Amino Count")
-    plt.hist(trans_seq_count)
+    stat(trans_seq_percent)
+    
+    plot_hist("Transmembrane Hydrophobic Amino Percent", trans_seq_percent, "percent", [0, 100], [0, 11000])
     plt.tight_layout()
     plt.show() 
     
+# ------------B.3--------------
+def group_cds_by_trans(cds, clean_cds_id, clean_trans_id, clean_up_id):
+    with_mask = [(id in clean_trans_id) for id in clean_cds_id]
+    without_mask = [(not (id in clean_trans_id) and (id in clean_up_id))
+                    for id in clean_cds_id] 
+    
+    cds_with_trans = cds[with_mask]
+    cds_without_trans = cds[without_mask] 
+    
+    return cds_with_trans, cds_without_trans
+    
+
+def plot_cds_trans_gc_percent(cds, cds_with_trans, cds_without_trans):
+    all_GC_percent = np.asarray(cds['GC percent'])
+    with_GC_percent = np.asarray(cds_with_trans['GC percent'])
+    without_GC_percent = np.asarray(cds_without_trans['GC percent'])
+    
+    print("All proteins gc percent stats:")
+    stat(all_GC_percent)
+    print("Proteins with transmembrane gc percent stats:")
+    stat(with_GC_percent)
+    print("Proteins without transmembrane gc percent stats:")
+    stat(without_GC_percent)
+
+    x_title = "GC percent"
+    x_range = [0, 100]
+    y_range = [0, 1500]
+    plt.figure(figsize=(10, 6))
+
+    plt.subplot(1, 3, 1)
+    plot_hist("All Proteins", all_GC_percent, x_title, x_range, y_range)
+
+    plt.subplot(1, 3, 2)
+    plot_hist("Proteins with transmembrane", with_GC_percent, x_title, x_range, y_range)
+
+    plt.subplot(1, 3, 3)
+    plot_hist("Proteins without transmembrane", without_GC_percent, x_title, x_range, y_range)
+       
+    plt.suptitle("GC Percent Histograms")
+    plt.tight_layout()
+    plt.show()
       
+       
 if __name__ == "__main__":
-    rec, gb_df = open_and_create_gb_dataframe()
+    gb_df = open_part_a_result_file()
     up_df = open_xlsx_file()
 
     # Q1
     print("\n------------Question 1------------")
-    cds, __ = group_genes(gb_df)             # group to CDS and others
-    cds_id = np.asarray(cds['id'])           # converting id col to arr
+    cds_df, __ = group_genes(gb_df)             # group to CDS and others
+    cds_id = np.asarray(cds_df['id'])           # converting id col to arr
     up_id = np.asarray(up_df['Gene ID'])
-    compare_gb_to_up(cds_id, up_id)          # printing the comparing results
+    clean_cds_id = clean_id(cds_id)
+    clean_up_id =  clean_id(up_id)
+    compare_gb_to_up(cds_id, up_id, clean_cds_id, clean_up_id)          # printing the comparing results
  
     # Q2 
     print("\n------------Question 2------------")
     trans_df = create_trans_table(up_df)      # creating a table of all the trans parts
-    trans_len_arr = np.asarray(trans_df['length'])  
-    plot_trans_len_stat(trans_len_arr)        # printing trans lengths stats
+    trans_len_arr = np.asarray(trans_df['length']) 
     trans_seq_arr = np.asarray(trans_df['sequence']) 
+    plot_trans_len_stat(trans_len_arr)        # printing trans lengths stats
     plot_trans_amino_stat(trans_seq_arr)      # printing trans hydro amino stats
     
     # Q3
-    # print("\n------------Question 3------------")
-  
+    print("\n------------Question 3------------")
+    trans_id = np.asarray(trans_df['id'])
+    clean_trans_id = clean_id(trans_id)
+    cds_with_trans, cds_without_trans = group_cds_by_trans(cds_df, clean_cds_id, clean_trans_id, clean_up_id)
+    plot_cds_trans_gc_percent(cds_df, cds_with_trans, cds_without_trans)
