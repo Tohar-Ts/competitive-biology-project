@@ -4,7 +4,7 @@ import pandas as pd
 from part_a import *
 
 UNIPORT_PATH = "data/BS168.xlsx"
-Hydrophobic_amino = ['ALA', 'PHE', 'LEU', 'IIE', 'VAL', 'MET', 'PRO', 'TRP']
+HYDROPHOBIC_AMINO = ['A', 'F', 'L', 'I', 'V', 'M', 'P', 'W']
     
 def open_xlsx_file():
     return pd.read_excel(UNIPORT_PATH, sheet_name='Sheet0')
@@ -142,18 +142,15 @@ def plot_trans_amino_stat(trans_seq_arr):
     
     # counting how many Hydrophobic amino are in every sequence
     trans_seq_percent = []
-    for s in trans_seq_arr:
-        count = 0
-        for a in Hydrophobic_amino:
-            if a in s:
-                # each amino is of len 3
-                count+=3
-        hydro_percent = (count / len(s)) * 100
+    for seq in trans_seq_arr:
+        count = sum([1 for a in seq if a in HYDROPHOBIC_AMINO])
+        hydro_percent = (count / len(seq)) * 100
         trans_seq_percent.append(hydro_percent)
     
     stat(trans_seq_percent)
     
-    plot_hist("Transmembrane Hydrophobic Amino Percent", trans_seq_percent, "percent", [0, 100], [0, 11000])
+    plot_hist("Transmembrane Hydrophobic Amino Percent", trans_seq_percent, "percent"
+              ,[0, 100], [0, 4000])
     plt.tight_layout()
     plt.show() 
     

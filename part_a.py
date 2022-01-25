@@ -67,36 +67,41 @@ def stat(arr):
     max = np.max(arr)
     avg = np.average(arr)
     print("average: {:.2f},".format(avg), "minimum: {:.2f},".format(min), "maximum: {:.2f}".format(max))
+    return max
 
 # ------------A.2.d------------
-def plot_hist(title, from_arr, x_label, x_range, y_range):
+def plot_hist(title, from_arr, x_label, x_max, y_max):
     plt.title(title)
     plt.hist(from_arr)
     plt.xlabel(x_label)
     plt.ylabel("number count")
-    plt.xlim(x_range)
-    plt.ylim(y_range)
+    plt.xlim([0, x_max])
+    plt.ylim([0, y_max])
     
     
 def plot_len_stat(cds_len, other_gene_len):
-    print("Genes lengths stats:")
-    stat(cds_len)
-    stat(other_gene_len)
-
+    print("Proteins lengths stats:")
+    cds_len_max = stat(cds_len)
+    
+    print("Non proteins lengths stats:")
+    other_len_max = stat(other_gene_len)
+    
+    x_max = max([cds_len_max, other_len_max])
+    y_max = 4500
+    
     all_genes = np.concatenate((cds_len,other_gene_len))
+    
     x_label = "length"
-    x_range =  [0, 16500]
-    y_range = [0, 4500]
     plt.figure(figsize=(10, 6))
 
     plt.subplot(1, 3, 1)
-    plot_hist("All Genes", all_genes, x_label, x_range, y_range)
+    plot_hist("All Genes", all_genes, x_label, x_max, y_max)
 
     plt.subplot(1, 3, 2)
-    plot_hist("CDS Genes", cds_len, x_label, x_range, y_range)
+    plot_hist("Proteins", cds_len, x_label, x_max, y_max)
 
     plt.subplot(1, 3, 3)
-    plot_hist("Others", other_gene_len, x_label, x_range, y_range)
+    plot_hist("Non Proteins", other_gene_len, x_label, x_max, y_max)
        
     plt.suptitle("Lengths Histograms")
     plt.tight_layout()
@@ -137,7 +142,7 @@ def avg_GC_percent_col(df):
 
 # ------------A.3.d------------
 def plot_GC_stat(GC_percent_arr):
-    plot_hist("GC Percent Histogram", GC_percent_arr, "GC percent", [0, 100], [0, 1700])
+    plot_hist("GC Percent Histogram", GC_percent_arr, "GC percent", 100, 1600)
     plt.show()
 
 # ------------A.3.d------------
