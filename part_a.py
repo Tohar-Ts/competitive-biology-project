@@ -3,10 +3,13 @@ from Bio import SeqIO
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from Bio.Seq import Seq
+from Bio.Data.CodonTable import TranslationError
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 UNIPORT_PATH = os.path.join(DATA_PATH, 'BS168.gb')
 RESULT_PATH = os.path.join(DATA_PATH, "part_a.csv")
+EXCEPTION_PATH = os.path.join(DATA_PATH, "gene_exceptions.csv")
 
 
 def open_and_create_gb_dataframe(path):
@@ -150,14 +153,20 @@ def sub_sequence(sequence, start, end):
     return sequence[start:end]
 
 
-def gc_percent_for_row(row, sequence):
+def add_sub_sequence_col(df, sequence):
+    new_col = df.apply(lambda row: sub_sequence(sequence, row['start'], row['end']), axis=1)
+    df['sub sequence'] = new_col
+    return df
+
+
+def gc_percent_for_row(row):
     if row['type'] != 'CDS':
         return None
-    return gc_percentage(sub_sequence(sequence, row['start'], row['end']))
+    return gc_percentage(row['sub sequence'])
 
 
-def add_gc_percent_col(df, sequence):
-    new_col = df.apply(lambda row: gc_percent_for_row(row, sequence), axis=1)
+def add_gc_percent_col(df):
+    new_col = df.apply(lambda row: gc_percent_for_row(row), axis=1)
     df['GC percent'] = new_col
     return df
 
@@ -194,30 +203,64 @@ def show_extreme_gc_percents_genes(df, n=5):
 # ------------A.4------------
 
 
-def find_conflicts(df, sequence):
-    # 1)does the translate match?
-    new_col = df.apply(lambda row: gc_percent_for_row(row, sequence), axis=1)
-    df['GC percent'] = new_col
+def check_translation(row):
+    row_type = row["type"]
+
+    if row_type != "CDS":
+        return None
+
+    org_trans = row["translation"]
+    sequence = str(row["sub sequence"])
+    table = row["table"]
+    strand = row["strand"]
+    codon_start = int(row["codon_start"])
+
+    org_seq = Seq(sequence[(codon_start-1):])
+    if strand != 1:
+        org_seq = org_seq.reverse_complement()
+
+    try:
+        trans = str(org_seq.translate(table=table, cds=True))
+        check = (trans == org_trans)
+        if check:
+            return "OK"
+        return "Translation doesn't match"
+
+    except TranslationError as err:
+        return str(err)
+
+
+def find_conflicts(df):
+    new_col = df.apply(lambda row: check_translation(row), axis=1)
+    df['check'] = new_col
+
+    check_df = df.dropna(subset='check')
+    conf_df = check_df[check_df['check'] != 'OK']
+
+    print(f"\nGenes with conflict in translations:\n{conf_df}")
+    return conf_df
 
 
 if __name__ == "__main__":
     seq, gb_df = open_and_create_gb_dataframe(UNIPORT_PATH)
 
-    # Q1
     print("\n------------Question 1------------")
     show_type_dict(gb_df)
 
-    # Q2
     print("\n------------Question 2------------")
     gb_df = add_len_col(gb_df)                          # calculate the len
     cds_df, other_gene = group_genes(gb_df)             # group to CDS and others
     plot_len_stat(cds_df['len'], other_gene['len'])     # print the stat and plot the histogram
 
-    # Q3
     print("\n------------Question 3------------")
-    show_source_gc(seq)                                  # print GC percent of the genome
-    gb_df = add_gc_percent_col(gb_df, seq)               # create GC percent column
-    show_avg_gc_percent_col(gb_df)                       # print average GC percent of proteins
-    plot_gc_stat(gb_df['GC percent'])                    # plot GC histogram
+    show_source_gc(seq)                                 # print GC percent of the genome
+    gb_df = add_sub_sequence_col(gb_df, seq)
+    gb_df = add_gc_percent_col(gb_df)                   # create GC percent column
+    show_avg_gc_percent_col(gb_df)                      # print average GC percent of proteins
+    plot_gc_stat(gb_df['GC percent'])                   # plot GC histogram
     show_extreme_gc_percents_genes(gb_df)
-    gb_df.to_csv(RESULT_PATH)                            # save final results to csv file
+    gb_df.to_csv(RESULT_PATH)                           # save final results to csv file
+
+    print("\n------------Question 4------------")
+    conflicts_df = find_conflicts(gb_df)
+    conflicts_df.to_csv(EXCEPTION_PATH)                 # save exceptions results to csv file
