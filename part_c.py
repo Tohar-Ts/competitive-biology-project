@@ -1,18 +1,8 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from Bio.Seq import Seq
-from Bio import Align
-from Bio.Align import substitution_matrices
 from Bio.codonalign.codonseq import CodonSeq, cal_dn_ds
-from part_a import *
 from part_b import *
 from Bio.Data import CodonTable
-from Bio.Align import MultipleSeqAlignment
-from Bio.SeqRecord import SeqRecord
 from Bio import pairwise2
-from Bio.pairwise2 import format_alignment
-from Bio.SubsMat import MatrixInfo as matlist
+from Bio.Align import substitution_matrices
 
 UNIPORT_PATH_2020 = os.path.join(DATA_PATH, "covid19 - 2020.gb")
 UNIPORT_PATH_2022 = os.path.join(DATA_PATH, "covid19 - 2022.gb")
@@ -36,7 +26,9 @@ TRANS_TABLE_1 = {
     'GTG': 'V', 'GCG': 'A', 'GAG': 'E', 'GGG': 'G'}
 
 # ------------C.1--------------
-def count_synonymous():
+
+
+def show_count_synonymous():
     DNA = ['A', 'C', 'T', 'G']
 
     syn_dict = {}
@@ -58,74 +50,103 @@ def count_synonymous():
                 synon += 1
         syn_dict[key] = synon
 
-    return syn_dict
+    print(f"\nsynonymous count dict:\n{syn_dict}")
 
-# ------------C.2--------------
+# ------------C.2.a--------------
+
+
 def create_dataframe(path):
     # opening the file
     with open(path, "r") as file:
         gen = SeqIO.parse(file, "genbank")
-        rec = next(gen)  # content of 1st record
+        source = next(gen)  # content of 1st record
 
-    id, start, end, feat_type, strand = [], [], [], [], []
+    id_name, start, end, feat_type, strand = [], [], [], [], []
     # only for cds
-    translation, codon_start = [], []
+    translations, codon_starts = [], []
 
-    feats = rec.features[1:]
+    feats = source.features[1:]
     for feat in feats:
         if feat.type == 'gene':
             continue
+
         if "gene" in feat.qualifiers.keys():
             name = feat.qualifiers["gene"][0]
         else:
             name = None
-        id.append(name)
+
+        if feat.type == 'CDS':
+            trans = feat.qualifiers["translation"][0]
+            codon_start = feat.qualifiers["codon_start"][0]
+        else:
+            trans = None
+            codon_start = None
+
+        id_name.append(name)
         start.append(feat.location.start.position)
         end.append(feat.location.end.position)
         feat_type.append(feat.type)
         strand.append(feat.location.strand)
-
-        if feat.type == 'CDS':
-            translation.append(feat.qualifiers["translation"][0])
-            codon_start.append(feat.qualifiers["codon_start"][0])
-        else:
-            translation.append(None)
-            codon_start.append(None)
+        translations.append(trans)
+        codon_starts.append(codon_start)
 
     # creating the data frame
-    df = pd.DataFrame(zip(id, start, end, strand, feat_type, translation, codon_start),
+    df = pd.DataFrame(zip(id_name, start, end, strand, feat_type, translations, codon_starts),
                       columns=['id', 'start', 'end', 'strand', 'type', 'translation', 'codon_start'])
-    return rec, df
+
+    # getting the full genome
+    sequence = source.seq.upper()
+
+    return sequence, df
 
 
-def get_seq_and_trans(df, seq, gene_name):
+def show_df_common_names(df1, df2):
+    up_clean_df20 = df1.dropna(subset=['translation'])
+    up_clean_df22 = df2.dropna(subset=['translation'])
+
+    df20_id = np.asarray(up_clean_df20['id'])
+    df22_id = np.asarray(up_clean_df22['id'])
+
+    id_only_20 = find_missing(df20_id, df22_id)
+    id_only_22 = find_missing(df22_id, df20_id)
+
+    print("id_only_20: ", id_only_20)
+    print("id_only_22: ", id_only_22)
+
+# ------------C.2.b--------------
+
+
+def get_seq_and_trans(df, sequence, gene_name):
     gene_row = df[df['id'] == gene_name]
     
     start = list(gene_row['start'])[0]
     end = list(gene_row['end'])[0]
     
-    gene_seq = seq[start: end + 1]
+    gene_seq = sub_sequence(sequence, start, end)
     gene_trans = list(gene_row['translation'])[0]
     
     return gene_seq, gene_trans
 
 
 def align(trans1, trans2):
-    alignment = pairwise2.align.globaldx(trans1, trans2, matlist.blosum62)
+    matrix = substitution_matrices.load("BLOSUM62")
+    alignment = pairwise2.align.globaldx(trans1, trans2, matrix)
     align1 = alignment[0][0]
     align2 = alignment[0][1]
+    print(align1, align2)
+
     return align1, align2      
 
 
-def pro_align_to_rna(seq, align):
+def pro_align_to_rna(sequence, alignment):
     rna_align = ""
     rna_index = 0
-    for c in align:
+    for c in alignment:
         if c == '-':
             rna_align += '---'
             
         else:
-            rna_align += str(seq[rna_index:rna_index + 3])
+            rna_align += str(sequence[rna_index:rna_index + 3])
             rna_index += 3
 
     return rna_align
@@ -135,53 +156,40 @@ def dn_ds_stats(rna_align1, rna_align2):
     codon_seq1 = CodonSeq(rna_align1)
     codon_seq2 = CodonSeq(rna_align2)
     try:
-        dN, dS = cal_dn_ds(codon_seq1, codon_seq2,
-                        codon_table=CodonTable.generic_by_id[1])
-        print(f"dN:{dN}")
-        print(f"dS:{dS}")
+        dn, ds = cal_dn_ds(codon_seq1, codon_seq2, codon_table=CodonTable.generic_by_id[1])
+        print(f"dN:{dn}")
+        print(f"dS:{ds}")
     except KeyError:
         print('key error')
 
 
+def show_genes_dnds_stats(seq1, df1, seq2, df2):
+    clean_df1 = df1.dropna(subset=['id'])
+    genes_names = np.asarray(clean_df1['id'])
 
-def genes_stats(seq1, df20, seq2, df22, names_genes):
-
-    for gene in names_genes:
-        print(f'**********gene {gene} **********')
+    for gene in genes_names:
+        print(f'\n**********gene {gene} **********\n')
         
-        gene_seq1, trans1 = get_seq_and_trans(df20, seq1, gene)
-        gene_seq2, trans2 = get_seq_and_trans(df22, seq2, gene)
+        gene_seq1, trans1 = get_seq_and_trans(df1, seq1, gene)
+        gene_seq2, trans2 = get_seq_and_trans(df2, seq2, gene)
         
         align1, align2 = align(trans1, trans2)
 
         rna_align1 = pro_align_to_rna(gene_seq1, align1)
         rna_align2 = pro_align_to_rna(gene_seq2, align2)
 
-        dn_ds_stats(rna_align1, rna_align2)
+        # dn_ds_stats(rna_align1, rna_align2)
     
 
 if __name__ == "__main__":
-    # Q1
     print("\n------------Question 1------------")
-    dict = count_synonymous()
-    print("synonymous count dict:\n", dict)
+    show_count_synonymous()
 
-    # Q2
     print("\n------------Question 2a------------")
-    rec1, df20 = create_dataframe(UNIPORT_PATH_2020)
-    rec2, df22 = create_dataframe(UNIPORT_PATH_2022)
+    genome1, df20 = create_dataframe(UNIPORT_PATH_2020)
+    genome2, df22 = create_dataframe(UNIPORT_PATH_2022)
+    show_df_common_names(df20, df22)
 
-    up_clean_df20 = df20.dropna(subset=['translation'])
-    up_clean_df22 = df22.dropna(subset=['translation'])
-    df20_id = np.asarray(up_clean_df20['id'])
-    df22_id = np.asarray(up_clean_df22['id'])
-
-    id_only_20 = find_missing(df20_id, df22_id)
-    id_only_22 = find_missing(df22_id, df20_id)
-    print("id_only_20: ", id_only_20)
-    print("id_only_22: ", id_only_22)
-    
     print("\n------------Question 2b------------")    
-    genes_stats(rec1.seq.upper(), up_clean_df20,
-                rec2.seq.upper(), up_clean_df22, df20_id)
+    show_genes_dnds_stats(genome1, df20, genome2, df22)
  
