@@ -81,21 +81,29 @@ def group_genes(df):
 # ------------A.2.c------------
 
 
-def stat(lst):
-    arr = np.asarray(lst)
+def show_stat(arr):
+    if type(arr) != np.ndarray:
+        arr = np.asarray(arr)
+
     minimum = np.min(arr)
     maximum = np.max(arr)
     avg = np.average(arr)
     med = np.median(arr)
+
     print(f"average: {avg:.2f} minimum: {minimum:.2f} maximum: {maximum:.2f} median: {med:.2f}")
     return maximum
 
 # ------------A.2.d------------
 
 
-def plot_hist(title, from_arr, x_label, x_max, y_max):
+def plot_hist(title, from_arr, x_label, x_max, y_max, labels=None):
+    plt.style.use('seaborn-deep')
     plt.title(title)
-    plt.hist(from_arr)
+    if labels:
+        plt.hist(from_arr, label=labels)
+        plt.legend(loc='upper right')
+    else:
+        plt.hist(from_arr)
     plt.xlabel(x_label)
     plt.ylabel("number count")
     plt.xlim([0, x_max])
@@ -104,10 +112,10 @@ def plot_hist(title, from_arr, x_label, x_max, y_max):
 
 def plot_len_stat(cds_len, others_len):
     print("\nProteins lengths stats:")
-    cds_len_max = stat(cds_len)
+    cds_len_max = show_stat(cds_len)
 
     print("\nNon proteins lengths stats:")
-    other_len_max = stat(others_len)
+    other_len_max = show_stat(others_len)
 
     cds_len_arr = np.asarray(cds_len)
     others_len_arr = np.asarray(others_len)
