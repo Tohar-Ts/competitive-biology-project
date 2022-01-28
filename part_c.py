@@ -137,33 +137,8 @@ def dn_ds_stats(rna_align1, rna_align2):
     dN, dS = cal_dn_ds(codon_seq1, codon_seq2,
                        codon_table=CodonTable.generic_by_id[1])
     
-    print("dN:%0.3f " % dN)
-    print("dS:%0.3f " % dS)
-
-
-def seq_codon(seq1, translation1, seq2, translation2):
-
-    aligner = Align.PairwiseAligner()
-    aligner.substitution_matrix = substitution_matrices.load("BLOSUM62")
-    # print("translation1", translation1)
-    # print("translation2", translation2)
-    alignments = aligner.align(translation1, translation2)
-    alignments = list(alignments)
-    print("alignments:\n", alignments[0])
-    align1, align2 = split_align(str(alignments[0]))
-    rna_align1 = pro_align_to_rna(seq1, align1)
-    rna_align2 = pro_align_to_rna(seq2, align2)
-    print("lens:", len(rna_align1), len(rna_align2))
-    seq1 = CodonSeq(rna_align1)
-    seq2 = CodonSeq(rna_align2)
-
-    dN, dS = cal_dn_ds(seq1, seq2)
-    dN_dS_ratio = float(dN/dS)
-    print("dN:%0.3f " % dN)
-    print("dS:%0.3f " % dS)
-    print("dN/dS:%0.3f " % dN_dS_ratio)
-    # return dN, dS, dN_dS_ratio
-    return 0, 0, 0
+    print(f"dN:{dN}")
+    print(f"dS:{dS}")
 
 
 def genes_stats(seq1, df20, seq2, df22, names_genes):
