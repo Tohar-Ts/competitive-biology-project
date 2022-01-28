@@ -59,7 +59,7 @@ def show_type_dict(df):
 
 
 def single_gene_length(start, end):
-    return np.abs(end - start) + 1
+    return np.abs(end - start)
 
 
 def add_len_col(df):
@@ -139,19 +139,21 @@ def gc_percentage(sequence):
     return ((g_count + c_count) / len(sequence)) * 100
 
 
-def source_gc(record):
-    sequence = record.seq.upper()
+def show_source_gc(sequence):
     gc_percent = gc_percentage(sequence)
-    print(f"Genome GC percent: {gc_percent:.2f}%")
-    return sequence
+    print(f"\nGenome GC percent: {gc_percent:.2f}%")
 
 # ------------A.3.b------------
+
+
+def sub_sequence(sequence, start, end):
+    return sequence[start:end]
 
 
 def gc_percent_for_row(row, sequence):
     if row['type'] != 'CDS':
         return None
-    return gc_percentage(sequence[row['start']:row['end'] + 1])
+    return gc_percentage(sub_sequence(sequence, row['start'], row['end']))
 
 
 def add_gc_percent_col(df, sequence):
@@ -166,7 +168,7 @@ def mean(lst):
     return lst.mean()
 
 
-def avg_gc_percent_col(df):
+def show_avg_gc_percent_col(df):
     average = mean(df["GC percent"])
     print(f"\nProteins average GC percent: {average:.2f}%")
 
@@ -180,7 +182,7 @@ def plot_gc_stat(gc_percent_arr):
 # ------------A.3.d------------
 
 
-def extreme_gc_percents_genes(df, n=5):
+def show_extreme_gc_percents_genes(df, n=5):
     top = df.nlargest(n, 'GC percent')
     bottom = df.nsmallest(n, 'GC percent')
     print("\nExtreme GC percents genes:")
@@ -188,6 +190,14 @@ def extreme_gc_percents_genes(df, n=5):
     print(top)
     print(f"\nBottom {n} GC percents genes details: ")
     print(bottom)
+
+# ------------A.4------------
+
+
+def find_conflicts(df, sequence):
+    # 1)does the translate match?
+    new_col = df.apply(lambda row: gc_percent_for_row(row, sequence), axis=1)
+    df['GC percent'] = new_col
 
 
 if __name__ == "__main__":
@@ -199,18 +209,15 @@ if __name__ == "__main__":
 
     # Q2
     print("\n------------Question 2------------")
-    gb_df = add_len_col(gb_df)                    # calculate the len
-    cds_df, other_gene = group_genes(gb_df)          # group to CDS and others
+    gb_df = add_len_col(gb_df)                          # calculate the len
+    cds_df, other_gene = group_genes(gb_df)             # group to CDS and others
     plot_len_stat(cds_df['len'], other_gene['len'])     # print the stat and plot the histogram
 
     # Q3
     print("\n------------Question 3------------")
-    # print GC percent of the genome
-    source_gc(seq)
-    gb_df = add_gc_percent_col(gb_df, genome)     # create GC percent column
-    # print average GC percent of proteins
-    avg_gc_percent_col(gb_df)
-    GC_percent_arr = np.asarray(gb_df['GC percent'])
-    plot_gc_stat(GC_percent_arr)                  # plot GC histogram
-    extreme_gc_percents_genes(gb_df)
-    gb_df.to_csv(RESULT_PATH)               # save final results to csv file
+    show_source_gc(seq)                                  # print GC percent of the genome
+    gb_df = add_gc_percent_col(gb_df, seq)               # create GC percent column
+    show_avg_gc_percent_col(gb_df)                       # print average GC percent of proteins
+    plot_gc_stat(gb_df['GC percent'])                    # plot GC histogram
+    show_extreme_gc_percents_genes(gb_df)
+    gb_df.to_csv(RESULT_PATH)                            # save final results to csv file

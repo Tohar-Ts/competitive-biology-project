@@ -11,7 +11,8 @@ from Bio.Data import CodonTable
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio import pairwise2
-
+from Bio.pairwise2 import format_alignment
+from Bio.SubsMat import MatrixInfo as matlist
 
 UNIPORT_PATH_2020 = os.path.join(DATA_PATH, "covid19 - 2020.gb")
 UNIPORT_PATH_2022 = os.path.join(DATA_PATH, "covid19 - 2022.gb")
@@ -110,7 +111,7 @@ def get_seq_and_trans(df, seq, gene_name):
 
 
 def align(trans1, trans2):
-    alignment = pairwise2.align.globalxx(trans1, trans2)
+    alignment = pairwise2.align.globaldx(trans1, trans2, matlist.blosum62)
     align1 = alignment[0][0]
     align2 = alignment[0][1]
     return align1, align2      
@@ -121,7 +122,7 @@ def pro_align_to_rna(seq, align):
     rna_index = 0
     for c in align:
         if c == '-':
-            continue
+            rna_align += '---'
             
         else:
             rna_align += str(seq[rna_index:rna_index + 3])
@@ -133,12 +134,14 @@ def pro_align_to_rna(seq, align):
 def dn_ds_stats(rna_align1, rna_align2):
     codon_seq1 = CodonSeq(rna_align1)
     codon_seq2 = CodonSeq(rna_align2)
-    
-    dN, dS = cal_dn_ds(codon_seq1, codon_seq2,
-                       codon_table=CodonTable.generic_by_id[1])
-    
-    print(f"dN:{dN}")
-    print(f"dS:{dS}")
+    try:
+        dN, dS = cal_dn_ds(codon_seq1, codon_seq2,
+                        codon_table=CodonTable.generic_by_id[1])
+        print(f"dN:{dN}")
+        print(f"dS:{dS}")
+    except KeyError:
+        print('key error')
+
 
 
 def genes_stats(seq1, df20, seq2, df22, names_genes):
@@ -163,7 +166,7 @@ if __name__ == "__main__":
     dict = count_synonymous()
     print("synonymous count dict:\n", dict)
 
-    # # Q2
+    # Q2
     print("\n------------Question 2a------------")
     rec1, df20 = create_dataframe(UNIPORT_PATH_2020)
     rec2, df22 = create_dataframe(UNIPORT_PATH_2022)
@@ -178,8 +181,7 @@ if __name__ == "__main__":
     print("id_only_20: ", id_only_20)
     print("id_only_22: ", id_only_22)
     
-    print("\n------------Question 2b------------")
-    five_common_genes = ['ORF3a', 'M', 'ORF7a', 'ORF3a', 'ORF10']
-    
+    print("\n------------Question 2b------------")    
     genes_stats(rec1.seq.upper(), up_clean_df20,
-                     rec2.seq.upper(), up_clean_df22, five_common_genes)
+                rec2.seq.upper(), up_clean_df22, df20_id)
+ 

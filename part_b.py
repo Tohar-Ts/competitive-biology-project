@@ -123,7 +123,7 @@ def create_trans_table(up_df):
             start = int(index[0])
             end = int(index[1])
             seq = sequence[start:end + 1]
-            length = singel_gene_length(start, end)
+            length = single_gene_length(start, end)
 
             start_list.append(start)
             end_list.append(end)
