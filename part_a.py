@@ -1,4 +1,4 @@
-from genric_functions import *
+from generic_functions import *
 
 
 UNIPORT_PATH = os.path.join(DATA_PATH, 'BS168.gb')
@@ -7,8 +7,8 @@ EXCEPTION_PATH = os.path.join(DATA_PATH, "gene_exceptions.csv")
 
 
 class GenBank:
-    def __init__(self, file_path):
-        genes, seq, df = open_and_create_gb_dataframe(file_path)
+    def __init__(self, file_path, id_header="locus_tag",  has_trans_table=True):
+        genes, seq, df = open_and_create_gb_dataframe(file_path, id_header,  has_trans_table)
         self.df = df
         self.seq = seq
         self.genes = genes

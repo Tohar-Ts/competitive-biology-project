@@ -19,28 +19,36 @@ def open_csv_file(path):
     return pd.read_csv(path)
 
 
-def open_and_create_gb_dataframe(path):
+def open_and_create_gb_dataframe(path, id_header="locus_tag",  has_trans_table=True):
     # opening the file
     with open(path, "r") as file:
         gen = SeqIO.parse(file, "genbank")
         source = next(gen)  # content of 1st record
 
     gene_names = []
-    locus_id, start, end, feat_types, strand = [], [], [], [], []
+    genes_id, start, end, feat_types, strand = [], [], [], [], []
     # only for cds
     tables, translations, codon_starts = [], [], []
 
     feats = source.features[1:]
     for feat in feats:
-        locus_name = feat.qualifiers["locus_tag"][0]
+
+        if id_header in feat.qualifiers.keys():
+            gene_name = feat.qualifiers[id_header][0]
+        else:
+            gene_name = None
+
         feat_type = feat.type
 
         if feat_type == 'gene':
-            gene_names.append(locus_name)
+            gene_names.append(gene_name)
             continue
 
         if feat_type == 'CDS':
-            table = feat.qualifiers["transl_table"][0]
+            if has_trans_table:
+                table = feat.qualifiers["transl_table"][0]
+            else:
+                table = 1
             translation = feat.qualifiers["translation"][0]
             codon_start = feat.qualifiers["codon_start"][0]
         else:
@@ -48,7 +56,7 @@ def open_and_create_gb_dataframe(path):
             translation = None
             codon_start = None
 
-        locus_id.append(locus_name)
+        genes_id.append(gene_name)
         feat_types.append(feat_type)
         start.append(feat.location.start.position)
         end.append(feat.location.end.position)
@@ -58,7 +66,7 @@ def open_and_create_gb_dataframe(path):
         codon_starts.append(codon_start)
 
     # creating the data frame
-    df = pd.DataFrame(zip(locus_id, start, end, strand, feat_types, tables, translations, codon_starts),
+    df = pd.DataFrame(zip(genes_id, start, end, strand, feat_types, tables, translations, codon_starts),
                       columns=['id', 'start', 'end', 'strand', 'type', 'table', 'translation', 'codon_start'])
 
     # getting the full genome
@@ -190,3 +198,11 @@ def calculate_hydro_percent(seq_arr):
         seq_percent.append(hydro_percent)
 
     return seq_percent
+
+
+def subtract_lists(subtract_from, to_subtract):
+    return [item for item in subtract_from if item not in to_subtract]
+
+
+def common(list1, list2):
+    return list(set(list1).intersection(list2))

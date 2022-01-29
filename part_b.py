@@ -1,5 +1,5 @@
 from part_a import RESULT_PATH
-from genric_functions import *
+from generic_functions import *
 
 UNIPORT_PATH = os.path.join(DATA_PATH, "BS168.xlsx")
 
