@@ -11,6 +11,8 @@ UNIPORT_PATH = os.path.join(DATA_PATH, 'BS168.gb')
 RESULT_PATH = os.path.join(DATA_PATH, "part_a.csv")
 EXCEPTION_PATH = os.path.join(DATA_PATH, "gene_exceptions.csv")
 
+# ------------Global Functions--------------
+
 
 def open_and_create_gb_dataframe(path):
     # opening the file
@@ -18,67 +20,50 @@ def open_and_create_gb_dataframe(path):
         gen = SeqIO.parse(file, "genbank")
         source = next(gen)  # content of 1st record
 
-    locus_id, start, end, feat_type, strand = [], [], [], [], []
+    gene_names = []
+    locus_id, start, end, feat_types, strand = [], [], [], [], []
     # only for cds
-    table, translation, codon_start = [], [], []
+    tables, translations, codon_starts = [], [], []
 
     feats = source.features[1:]
     for feat in feats:
-        if feat.type == 'gene':
+        locus_name = feat.qualifiers["locus_tag"][0]
+        feat_type = feat.type
+
+        if feat_type == 'gene':
+            gene_names.append(locus_name)
             continue
 
-        locus_id.append(feat.qualifiers["locus_tag"][0])
+        if feat_type == 'CDS':
+            table = feat.qualifiers["transl_table"][0]
+            translation = feat.qualifiers["translation"][0]
+            codon_start = feat.qualifiers["codon_start"][0]
+        else:
+            table = None
+            translation = None
+            codon_start = None
+
+        locus_id.append(locus_name)
+        feat_types.append(feat_type)
         start.append(feat.location.start.position)
         end.append(feat.location.end.position)
-        feat_type.append(feat.type)
         strand.append(feat.location.strand)
-
-        if feat.type == 'CDS':
-            table.append(feat.qualifiers["transl_table"][0])
-            translation.append(feat.qualifiers["translation"][0])
-            codon_start.append(feat.qualifiers["codon_start"][0])
-        else:
-            table.append(None)
-            translation.append(None)
-            codon_start.append(None)
+        tables.append(table)
+        translations.append(translation)
+        codon_starts.append(codon_start)
 
     # creating the data frame
-    df = pd.DataFrame(zip(locus_id, start, end, strand, feat_type, table, translation, codon_start),
+    df = pd.DataFrame(zip(locus_id, start, end, strand, feat_types, tables, translations, codon_starts),
                       columns=['id', 'start', 'end', 'strand', 'type', 'table', 'translation', 'codon_start'])
 
     # getting the full genome
     sequence = source.seq.upper()
 
-    return sequence, df
-
-# ------------A.1--------------
-
-
-def show_type_dict(df):
-    t_dict = df.type.value_counts().to_dict()
-    print(f"\nTypes dictionary:\n{t_dict}")
-
-# ------------A.2.a------------
+    return gene_names, sequence, df
 
 
 def single_gene_length(start, end):
     return np.abs(end - start)
-
-
-def add_len_col(df):
-    new_col = df.apply(lambda row: single_gene_length(row['start'], row['end']), axis=1)
-    df['len'] = new_col
-    return df
-
-# ------------A.2.b------------
-
-
-def group_genes(df):
-    cds = df[df['type'] == 'CDS']
-    others = df[df['type'] != 'CDS']
-    return cds, others
-
-# ------------A.2.c------------
 
 
 def show_stat(arr):
@@ -93,8 +78,6 @@ def show_stat(arr):
     print(f"average: {avg:.2f} minimum: {minimum:.2f} maximum: {maximum:.2f} median: {med:.2f}")
     return maximum
 
-# ------------A.2.d------------
-
 
 def plot_hist(title, from_arr, x_label, x_max, y_max, labels=None):
     plt.style.use('seaborn-deep')
@@ -108,6 +91,43 @@ def plot_hist(title, from_arr, x_label, x_max, y_max, labels=None):
     plt.ylabel("number count")
     plt.xlim([0, x_max])
     plt.ylim([0, y_max])
+
+# ------------GenBank Object--------------
+
+
+class GenBank:
+    def __init__(self, file_path):
+        genes, seq, df = open_and_create_gb_dataframe(file_path)
+        self.df = gb_df
+        self.seq = seq
+        self.genes = genes
+
+    # ------------A.1--------------
+
+    def show_type_dict(self):
+        gene_dict = {'gene': self.genes}
+        types_dict = self.df.type.value_counts().to_dict()
+        total_dict = dict(gene_dict)
+        total_dict.update(types_dict)
+        print(f"\nTypes dictionary:\n{total_dict}")
+
+    # ------------A.2.a------------
+
+    def add_len_col(self):
+        new_col = self.df.apply(lambda row: single_gene_length(row['start'], row['end']), axis=1)
+        self.df['len'] = new_col
+
+    # ------------A.2.b------------
+
+    def group_genes(self):
+        cds = self.df[self.df['type'] == 'CDS']
+        others = self.df[self.df['type'] != 'CDS']
+        return cds, others
+
+
+# ------------A.2.d------------
+
+
 
 
 def plot_len_stat(cds_len, others_len):
@@ -250,10 +270,10 @@ def find_conflicts(df):
 
 
 if __name__ == "__main__":
-    seq, gb_df = open_and_create_gb_dataframe(UNIPORT_PATH)
+    total_genes, seq, gb_df = open_and_create_gb_dataframe(UNIPORT_PATH)
 
     print("\n------------Question 1------------")
-    show_type_dict(gb_df)
+    show_type_dict(gb_df, total_genes)
 
     print("\n------------Question 2------------")
     gb_df = add_len_col(gb_df)                          # calculate the len

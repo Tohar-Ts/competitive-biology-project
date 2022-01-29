@@ -167,8 +167,8 @@ def show_genes_dnds_stats(seq1, df1, seq2, df2):
     clean_df1 = df1.dropna(subset=['id'])
     genes_names = np.asarray(clean_df1['id'])
 
-    for gene in genes_names:
-        print(f'\n**********gene {gene} **********\n')
+    for gene in genes_names[2:]:
+        print(f'\n********** gene {gene} **********\n')
         
         gene_seq1, trans1 = get_seq_and_trans(df1, seq1, gene)
         gene_seq2, trans2 = get_seq_and_trans(df2, seq2, gene)
