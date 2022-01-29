@@ -7,8 +7,30 @@ from Bio.Data.CodonTable import TranslationError
 from Bio.Seq import Seq
 
 pd.set_option('display.expand_frame_repr', False)
+
 DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
 HYDROPHOBIC_AMINO = ['A', 'F', 'L', 'I', 'V', 'M', 'P', 'W']
+
+DNA = ['A', 'C', 'T', 'G']
+TRANS_TABLE_1 = {
+    'TTT': 'F', 'TCT': 'S', 'TAT': 'Y', 'TGT': 'C',
+    'TTC': 'F', 'TCC': 'S', 'TAC': 'Y', 'TGC': 'C',
+    'TTA': 'L', 'TCA': 'S', 'TAA': '*', 'TGA': '*',
+    'TTG': 'L', 'TCG': 'S', 'TAG': '*', 'TGG': 'W',
+    'CTT': 'L', 'CCT': 'P', 'CAT': 'H', 'CGT': 'R',
+    'CTC': 'L', 'CCC': 'P', 'CAC': 'H', 'CGC': 'R',
+    'CTA': 'L', 'CCA': 'P', 'CAA': 'Q', 'CGA': 'R',
+    'CTG': 'L', 'CCG': 'P', 'CAG': 'Q', 'CGG': 'R',
+    'ATT': 'I', 'ACT': 'T', 'AAT': 'N', 'AGT': 'S',
+    'ATC': 'I', 'ACC': 'T', 'AAC': 'N', 'AGC': 'S',
+    'ATA': 'I', 'ACA': 'T', 'AAA': 'K', 'AGA': 'R',
+    'ATG': 'M', 'ACG': 'T', 'AAG': 'K', 'AGG': 'R',
+    'GTT': 'V', 'GCT': 'A', 'GAT': 'D', 'GGT': 'G',
+    'GTC': 'V', 'GCC': 'A', 'GAC': 'D', 'GGC': 'G',
+    'GTA': 'V', 'GCA': 'A', 'GAA': 'E', 'GGA': 'G',
+    'GTG': 'V', 'GCG': 'A', 'GAG': 'E', 'GGG': 'G'}
+
 
 
 def open_xlsx_file(path, sheet_name):

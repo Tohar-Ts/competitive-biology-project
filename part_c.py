@@ -4,55 +4,42 @@ from Bio.Data import CodonTable
 from Bio import pairwise2
 from Bio.SubsMat import MatrixInfo
 from part_a import GenBank
+from collections import Counter
+import pprint
 
 UNIPORT_PATH_2020 = os.path.join(DATA_PATH, "covid19 - 2020.gb")
 UNIPORT_PATH_2022 = os.path.join(DATA_PATH, "covid19 - 2022.gb")
 
-TRANS_TABLE_1 = {
-    'TTT': 'F', 'TCT': 'S', 'TAT': 'Y', 'TGT': 'C',
-    'TTC': 'F', 'TCC': 'S', 'TAC': 'Y', 'TGC': 'C',
-    'TTA': 'L', 'TCA': 'S', 'TAA': '*', 'TGA': '*',
-    'TTG': 'L', 'TCG': 'S', 'TAG': '*', 'TGG': 'W',
-    'CTT': 'L', 'CCT': 'P', 'CAT': 'H', 'CGT': 'R',
-    'CTC': 'L', 'CCC': 'P', 'CAC': 'H', 'CGC': 'R',
-    'CTA': 'L', 'CCA': 'P', 'CAA': 'Q', 'CGA': 'R',
-    'CTG': 'L', 'CCG': 'P', 'CAG': 'Q', 'CGG': 'R',
-    'ATT': 'I', 'ACT': 'T', 'AAT': 'N', 'AGT': 'S',
-    'ATC': 'I', 'ACC': 'T', 'AAC': 'N', 'AGC': 'S',
-    'ATA': 'I', 'ACA': 'T', 'AAA': 'K', 'AGA': 'R',
-    'ATG': 'M', 'ACG': 'T', 'AAG': 'K', 'AGG': 'R',
-    'GTT': 'V', 'GCT': 'A', 'GAT': 'D', 'GGT': 'G',
-    'GTC': 'V', 'GCC': 'A', 'GAC': 'D', 'GGC': 'G',
-    'GTA': 'V', 'GCA': 'A', 'GAA': 'E', 'GGA': 'G',
-    'GTG': 'V', 'GCG': 'A', 'GAG': 'E', 'GGG': 'G'}
-
 
 # ------------C.1--------------
 
+def replace_char(string, at, to):
+    temp = list(string)
+    temp[at] = to
+    return "".join(temp)
+
 
 def show_count_synonymous():
-    dna = ['A', 'C', 'T', 'G']
-
     syn_dict = {}
     for key, value in TRANS_TABLE_1.items():
-        synonym = 0
+        possible_mutations = {}
+
         for position in range(3):
-            d_count = 0
-            for d in dna:
-                if key[position] == d:  # not change
+            for dna_letter in DNA:
+                if key[position] == dna_letter:  # no change
                     continue
+
                 else:
-                    temp = list(key)
-                    temp[position] = d
-                    temp = "".join(temp)
+                    mutation = replace_char(key, position, dna_letter)
+                    amino = TRANS_TABLE_1[mutation]
+                    if amino != '*':        # stop codon
+                        possible_mutations[mutation] = TRANS_TABLE_1[mutation]
 
-                    if value == TRANS_TABLE_1[temp]:
-                        d_count += 1
-            if d_count == len(dna) - 1:
-                synonym += 1
-        syn_dict[key] = synonym
+        synonymous_count = Counter(possible_mutations.values())[value]
+        syn_dict[key] = round((3 * synonymous_count) / len(possible_mutations), 2)
 
-    print(f"\nsynonymous count dict:\n{syn_dict}")
+    print("\nsynonymous count dict:\n")
+    pprint.pprint(syn_dict)
 
 # ------------C.2.a--------------
 
@@ -164,8 +151,8 @@ if __name__ == "__main__":
     genbank20.add_sub_sequence_col()
     genbank22.add_sub_sequence_col()
 
-    # print("\n------------Question 1------------")
-    # show_count_synonymous()
+    print("\n------------Question 1------------")
+    show_count_synonymous()
 
     print("\n------------Question 2a------------")
     common_names = show_common_names(genbank20.genes, genbank22.genes)
