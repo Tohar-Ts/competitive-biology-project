@@ -1,11 +1,10 @@
 from Bio.codonalign.codonseq import CodonSeq, cal_dn_ds
 from generic_functions import *
 from Bio.Data import CodonTable
-from Bio import pairwise2
-from Bio.SubsMat import MatrixInfo
 from part_a import GenBank
 from collections import Counter
 import pprint
+from Bio import Align
 
 UNIPORT_PATH_2020 = os.path.join(DATA_PATH, "covid19 - 2020.gb")
 UNIPORT_PATH_2022 = os.path.join(DATA_PATH, "covid19 - 2022.gb")
@@ -82,13 +81,17 @@ def get_seq_and_trans(df, gene_name):
 
 
 def align(trans1, trans2):
-    matrix = MatrixInfo.blosum62
-    alignment = pairwise2.align.globaldx(trans1, trans2, matrix)
+    aligner = Align.PairwiseAligner()
+    alignments = aligner.align(trans1, trans2)
 
-    align1 = alignment[0][0]
-    align2 = alignment[0][1]
+    alignments = sorted(alignments)
+    alignment_str = str(alignments[len(alignments) - 1])
 
-    return align1, align2      
+    split = alignment_str.split('\n')
+    align1 = split[0]
+    align2 = split[2]
+
+    return align1, align2
 
 
 def pro_align_to_rna(sequence, alignment):
@@ -99,7 +102,7 @@ def pro_align_to_rna(sequence, alignment):
             rna_align += '---'
             
         else:
-            if (rna_index + 3) < len(sequence):
+            if (rna_index + 3) <= len(sequence):
                 rna_align += str(sequence[rna_index:rna_index + 3])
                 rna_index += 3
 
@@ -128,6 +131,17 @@ def show_dn_ds_stats(rna_align1, rna_align2):
         print('key error')
 
 
+def calculate_dn_ds(gene_seq1, trans1, gene_seq2, trans2):
+    align1, align2 = align(trans1, trans2)
+    assert (len(align1) == len(align2))
+
+    rna_align1 = pro_align_to_rna(gene_seq1, align1)
+    rna_align2 = pro_align_to_rna(gene_seq2, align2)
+    assert (len(rna_align1) == len(rna_align2))
+
+    show_dn_ds_stats(rna_align1, rna_align2)
+
+
 def genes_dn_ds(genes_names, df1, df2):
     for gene in genes_names:
         print(f'********** gene {gene} **********')
@@ -135,15 +149,8 @@ def genes_dn_ds(genes_names, df1, df2):
         gene_seq1, trans1 = get_seq_and_trans(df1, gene)
         gene_seq2, trans2 = get_seq_and_trans(df2, gene)
 
-        align1, align2 = align(trans1, trans2)
-        assert (len(align1) == len(align2))
+        calculate_dn_ds(gene_seq1, trans1, gene_seq2, trans2)
 
-        rna_align1 = pro_align_to_rna(gene_seq1, align1)
-        rna_align2 = pro_align_to_rna(gene_seq2, align2)
-        assert (len(rna_align1) == len(rna_align2))
-
-        show_dn_ds_stats(rna_align1, rna_align2)
-    
 
 if __name__ == "__main__":
     genbank20 = GenBank(UNIPORT_PATH_2020, 'gene', False)
@@ -158,7 +165,7 @@ if __name__ == "__main__":
     common_names = show_common_names(genbank20.genes, genbank22.genes)
 
     print("\n------------Question 2b------------")
-    genes_names = ['S', 'N', 'M', 'ORF6', 'ORF7a']
-    genes_dn_ds(genes_names, genbank20.df, genbank22.df)
-    mask = [i in genes_names for i in genbank20.df['id']]
+    chosen_genes = ['S', 'N', 'M', 'ORF6', 'ORF7a']
+    genes_dn_ds(chosen_genes, genbank20.df, genbank22.df)
+    mask = [i in chosen_genes for i in genbank20.df['id']]
     print(genbank20.df[mask])
