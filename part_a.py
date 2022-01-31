@@ -2,7 +2,7 @@ from generic_functions import *
 
 
 UNIPORT_PATH = os.path.join(DATA_PATH, 'BS168.gb')
-RESULT_PATH = os.path.join(DATA_PATH, "part_a.csv")
+PART_A_RESULT_PATH = os.path.join(DATA_PATH, "part_a.csv")
 EXCEPTION_PATH = os.path.join(DATA_PATH, "gene_exceptions.csv")
 
 

@@ -130,7 +130,7 @@ def show_dn_ds_stats(rna_align1, rna_align2):
 
 def genes_dn_ds(genes_names, df1, df2):
     for gene in genes_names:
-        print(f'\n********** gene {gene} **********\n')
+        print(f'********** gene {gene} **********')
 
         gene_seq1, trans1 = get_seq_and_trans(df1, gene)
         gene_seq2, trans2 = get_seq_and_trans(df2, gene)
@@ -158,4 +158,7 @@ if __name__ == "__main__":
     common_names = show_common_names(genbank20.genes, genbank22.genes)
 
     print("\n------------Question 2b------------")
-    genes_dn_ds(common_names, genbank20.df, genbank22.df)
+    genes_names = ['S', 'N', 'M', 'ORF6', 'ORF7a']
+    genes_dn_ds(genes_names, genbank20.df, genbank22.df)
+    mask = [i in genes_names for i in genbank20.df['id']]
+    print(genbank20.df[mask])

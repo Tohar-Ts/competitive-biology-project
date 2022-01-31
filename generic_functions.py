@@ -32,7 +32,6 @@ TRANS_TABLE_1 = {
     'GTG': 'V', 'GCG': 'A', 'GAG': 'E', 'GGG': 'G'}
 
 
-
 def open_xlsx_file(path, sheet_name):
     return pd.read_excel(path, sheet_name=sheet_name)
 

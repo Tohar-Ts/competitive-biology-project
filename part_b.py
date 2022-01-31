@@ -1,4 +1,4 @@
-from part_a import RESULT_PATH
+from part_a import PART_A_RESULT_PATH
 from generic_functions import *
 
 UNIPORT_PATH = os.path.join(DATA_PATH, "BS168.xlsx")
@@ -6,7 +6,7 @@ UNIPORT_PATH = os.path.join(DATA_PATH, "BS168.xlsx")
 
 class GenbankWithUniport:
 
-    def __init__(self, genbank_path, uniport_path):
+    def __init__(self, genbank_path=PART_A_RESULT_PATH, uniport_path=UNIPORT_PATH):
         self.gb_df = open_csv_file(genbank_path)
         self.up_df = open_xlsx_file(uniport_path, 'Sheet0')
         self.trans_df = None
@@ -170,7 +170,7 @@ class GenbankWithUniport:
 
 
 if __name__ == "__main__":
-    gb_and_up = GenbankWithUniport(RESULT_PATH, UNIPORT_PATH)
+    gb_and_up = GenbankWithUniport(PART_A_RESULT_PATH, UNIPORT_PATH)
 
     print("\n------------Question 1------------")
     gb_and_up.show_compare_gb_to_up()       # printing the comparing results
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     gb_and_up.create_trans_table()      # creating a table of all the trans parts
     gb_and_up.plot_trans_len_stat()       # printing trans lengths stats
     gb_and_up.plot_trans_amino_stat()       # printing trans hydro amino stats
-
+    print("\n", gb_and_up.trans_df)
     print("\n------------Question 3------------")
     gb_and_up.set_cds_with_and_without_trans()       # group cds by trans
     gb_and_up.plot_cds_trans_gc_percent()       # plot a, b, c, b+c subplots
