@@ -1,3 +1,4 @@
+from Bio.Align import substitution_matrices
 from Bio.codonalign.codonseq import CodonSeq, cal_dn_ds
 from generic_functions import *
 from Bio.Data import CodonTable
@@ -82,6 +83,7 @@ def get_seq_and_trans(df, gene_name):
 
 def align(trans1, trans2):
     aligner = Align.PairwiseAligner()
+    aligner.substitution_matrix = substitution_matrices.load("BLOSUM62")
     alignments = aligner.align(trans1, trans2)
 
     alignments = sorted(alignments)

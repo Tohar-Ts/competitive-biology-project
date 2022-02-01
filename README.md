@@ -2,7 +2,7 @@ Competitive Biology Project
 
 Authors:
 Yael Liberman
-Tohar Tzivtman
+Tohar Tsivtman
 Ayelet Gibli
 
 Code files:
@@ -22,5 +22,6 @@ covid19 - 2022.gb  -  GenBank file for part c.
 
 How to run:
 open a terminal in this folder.
+install: pip install -r requirements.txt
 run: python [file name]
 for each part individually.
